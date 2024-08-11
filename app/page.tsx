@@ -1,11 +1,8 @@
-// app/page.tsx
-
 "use client";
 
 import dynamic from 'next/dynamic';
 import React, { useState, useCallback } from 'react';
 import UserAvatar from './components/UserAvatar';
-import ActionMenu from './components/ActionMenu';
 import { BuildingInfo } from './types';
 
 const Map = dynamic(() => import('./components/Map'), { ssr: false });
@@ -26,13 +23,13 @@ const Home: React.FC = () => {
 
   const handleIncreaseHeight = useCallback(() => {
     if (buildingHeight !== null && selectedBuilding) {
-      setBuildingHeight(buildingHeight + 10); // Увеличиваем высоту на 10 метров
+      setBuildingHeight(buildingHeight + 10); 
     }
   }, [buildingHeight, selectedBuilding]);
 
   const handleResetHeight = useCallback(() => {
     if (selectedBuilding) {
-      setBuildingHeight(selectedBuilding.height); // Сбрасываем высоту
+      setBuildingHeight(selectedBuilding.height); 
     }
   }, [selectedBuilding]);
 
@@ -44,11 +41,7 @@ const Home: React.FC = () => {
         onResetHeight={handleResetHeight}
       />
       <UserAvatar />
-      <ActionMenu
-        selectedBuilding={selectedBuilding}
-        onIncreaseHeight={handleIncreaseHeight}
-        onResetHeight={handleResetHeight}
-      />
+      
     </div>
   );
 };
