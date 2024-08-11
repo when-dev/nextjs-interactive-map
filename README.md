@@ -51,7 +51,7 @@ To start the production server locally, use:
 ### Folder Structure
 - `app/`: Contains the main application components and pages.
     - `components/`: Contains reusable components like `Map`.
-    - `types/`: Contains TypeScript type definitions.
+    - `types.ts`: Contains TypeScript type definitions.
     - `page.tsx`: The main page component that integrates the map and buttons
 
 ### Usage 
