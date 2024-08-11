@@ -45,3 +45,22 @@ To build the application for production, use:
 To start the production server locally, use:
     `npm start`
 
+### Folder Structure
+- `app/`: Contains the main application components and pages.
+    - `components/`: Contains reusable components like `Map`.
+    - `types/`: Contains TypeScript type definitions.
+    - `page.tsx`: The main page component that integrates the map and buttons
+
+### Usage 
+1. Viewing the Map: Open the application in your browser to view the 3D map of buildings 
+centered on Almaty.
+2. Selecting a Building: Click on a building to view its information in the sidebar.
+3. Adjusting Building Height: Use the "Increase Height" button to raise the height of the selected 
+building. Use the "Reset Height" button to revert the building to its original height.
+
+### Development 
+- **Component Development**: Modify components in the `components/` directory.
+- **Styling**: Use Tailwind CSS classes for styling components.
+
+### License
+This project is licensed under the MIT License. See the **LICENSE** file for details.
