@@ -1,6 +1,6 @@
 import dynamic from 'next/dynamic';
 import UserAvatar from './components/UserAvatar';
-import ActionMenu from './components/ActionMenu';
+import ActionMenu from './components/ActionMenu.tsx';
 
 const Map = dynamic(() => import('./components/Map'), { ssr: false });
 
