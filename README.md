@@ -25,7 +25,9 @@ The app includes a user interface for increasing and resetting the height of bui
 ### Installation
 1. Clone the Repository: 
     `git clone https://github.com/when-dev/nextjs-interactive-map.git`
+
     `cd nextjs-interactive-map`
+    
 2. Install Dependencies:
     `npm install`
 
