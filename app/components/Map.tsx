@@ -1,46 +1,193 @@
-import React, { useEffect } from 'react';
+// app/components/Map.tsx
+
+"use client";
+
+import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
+import { BuildingInfo } from '../types'; 
 
-mapboxgl.accessToken = 'YOUR_MAPBOX_ACCESS_TOKEN';
+const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN!;
 
-const Map: React.FC = () => {
-  useEffect(() => {
-    const map = new mapboxgl.Map({
-      container: 'map',
-      style: 'mapbox://styles/mapbox/streets-v11',
-      center: [30.5234, 50.4501], // Киев
-      zoom: 12,
-    });
+mapboxgl.accessToken = mapboxToken;
 
-    map.on('load', () => {
-      map.addLayer({
-        id: '3d-buildings',
-        source: 'composite',
-        'source-layer': 'building',
-        filter: ['==', 'extrude', 'true'],
-        type: 'fill-extrusion',
-        minzoom: 15,
-        paint: {
-          'fill-extrusion-color': '#aaa',
-          'fill-extrusion-height': [
-            'interpolate', ['linear'], ['zoom'],
-            15, 0,
-            15.05, ['get', 'height']
-          ],
-          'fill-extrusion-base': [
-            'interpolate', ['linear'], ['zoom'],
-            15, 0,
-            15.05, ['get', 'min_height']
-          ],
-          'fill-extrusion-opacity': 0.6
+interface MapProps {
+  onBuildingSelect: (buildingId: string, height: number) => void;
+  onIncreaseHeight: () => void;
+  onResetHeight: () => void;
+}
+
+
+const Map: React.FC<MapProps> = ({ onBuildingSelect, onIncreaseHeight, onResetHeight }) => {
+    const mapContainerRef = useRef<HTMLDivElement | null>(null);
+    const mapRef = useRef<mapboxgl.Map | null>(null);
+    const [selectedBuilding, setSelectedBuilding] = useState<BuildingInfo | null>(null);
+    const [buildingHeight, setBuildingHeight] = useState<number | null>(null);
+  
+    useEffect(() => {
+      if (!mapContainerRef.current) return;
+  
+      const newMap = new mapboxgl.Map({
+        container: mapContainerRef.current,
+        style: 'mapbox://styles/mapbox/streets-v11',
+        center: [76.9454, 43.2566], // Алматы
+        zoom: 12,
+      });
+  
+      newMap.on('load', () => {
+        newMap.addLayer({
+          id: '3d-buildings',
+          source: 'composite',
+          'source-layer': 'building',
+          filter: ['==', 'extrude', 'true'],
+          type: 'fill-extrusion',
+          minzoom: 15,
+          paint: {
+            'fill-extrusion-color': '#aaa',
+            'fill-extrusion-height': [
+              'interpolate', ['linear'], ['zoom'],
+              15, 0,
+              15.05, ['get', 'height']
+            ],
+            'fill-extrusion-base': [
+              'interpolate', ['linear'], ['zoom'],
+              15, 0,
+              15.05, ['get', 'min_height']
+            ],
+            'fill-extrusion-opacity': 0.6
+          }
+        });
+  
+        // Скрытие рекламы
+        const hideMapboxLogo = () => {
+          const logo = document.querySelector('.mapboxgl-ctrl-logo') as HTMLElement;
+          if (logo) {
+            logo.style.display = 'none';
+          }
+  
+          const attribution = document.querySelector('.mapboxgl-ctrl-attrib') as HTMLElement;
+          if (attribution) {
+            attribution.style.display = 'none';
+          }
+        };
+  
+        hideMapboxLogo();
+      newMap.on('style.load', hideMapboxLogo);
+
+      newMap.on('click', '3d-buildings', (e) => {
+        if (e.features && e.features.length > 0) {
+          const feature = e.features[0];
+          const buildingId = feature.id as string;
+          const height = feature.properties?.height as number;
+          const name = feature.properties?.name as string;
+          const address = feature.properties?.address as string;
+
+          const buildingInfo = {
+            id: buildingId,
+            height: height,
+            name: name,
+            address: address
+          };
+
+          setSelectedBuilding(buildingInfo);
+          setBuildingHeight(height);
+          highlightBuilding(newMap, buildingId);
+          onBuildingSelect(buildingId, height);
         }
+      });
+
+      newMap.on('mouseenter', '3d-buildings', () => {
+        newMap.getCanvas().style.cursor = 'pointer';
+      });
+
+      newMap.on('mouseleave', '3d-buildings', () => {
+        newMap.getCanvas().style.cursor = '';
+        resetHighlight(newMap);
       });
     });
 
-    return () => map.remove();
-  }, []);
+    mapRef.current = newMap;
 
-  return <div id="map" className="w-full h-full"></div>;
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.remove();
+      }
+    };
+  }, [onBuildingSelect]);
+
+  const highlightBuilding = (map: mapboxgl.Map, buildingId: string) => {
+    if (!map) return;
+
+    map.setPaintProperty('3d-buildings', 'fill-extrusion-color', [
+      'case',
+      ['==', ['id'], buildingId],
+      '#ff0000', // Цвет выделенного здания
+      '#aaa'
+    ]);
+
+    // Добавление обводки
+    if (!map.getLayer('building-outline')) {
+      map.addLayer({
+        id: 'building-outline',
+        type: 'line',
+        source: 'composite',
+        'source-layer': 'building',
+        filter: ['==', 'id', buildingId],
+        paint: {
+          'line-color': '#000',
+          'line-width': 2
+        }
+      });
+    }
+  };
+
+  const resetHighlight = (map: mapboxgl.Map) => {
+    if (!map) return;
+
+    map.setPaintProperty('3d-buildings', 'fill-extrusion-color', '#aaa');
+
+    if (map.getLayer('building-outline')) {
+      map.removeLayer('building-outline');
+    }
+  };
+
+  const updateBuildingHeight = (newHeight: number) => {
+    if (!mapRef.current || !selectedBuilding) return;
+
+    const { id } = selectedBuilding;
+    setBuildingHeight(newHeight);
+
+    mapRef.current.setPaintProperty('3d-buildings', 'fill-extrusion-height', [
+      'case',
+      ['==', ['id'], id],
+      newHeight,
+      ['interpolate', ['linear'], ['zoom'], 15, 0, 15.05, ['get', 'height']]
+    ]);
+  };
+
+  useEffect(() => {
+    if (onIncreaseHeight) {
+      onIncreaseHeight();
+    }
+    if (onResetHeight) {
+      onResetHeight();
+    }
+  }, [onIncreaseHeight, onResetHeight]);
+
+  return (
+    <div className="relative w-full h-full">
+      <div ref={mapContainerRef} className="w-full h-full"></div>
+
+      {selectedBuilding && (
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white shadow-lg rounded-lg p-4 z-10">
+          <h3 className="text-lg font-bold">Building Information</h3>
+          <p><strong>ID:</strong> {selectedBuilding.id}</p>
+          <p><strong>Height:</strong> {selectedBuilding.height} meters</p>
+          <p><strong>Name:</strong> {selectedBuilding.name || 'N/A'}</p>
+          <p><strong>Address:</strong> {selectedBuilding.address || 'N/A'}</p>
+        </div>
+      )}
+    </div>
+  );
 };
 
 export default Map;
