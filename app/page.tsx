@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import React, { useState, useCallback } from 'react';
-import { BuildingInfo as BuildingInfoType } from './types'; 
+import { BuildingInfo as BuildingInfoType } from './types'; // Типы данных для здания
 import UserAvatar from './components/UserAvatar';
 
 const Map = dynamic(() => import('./components/Map'), { ssr: false });
@@ -19,7 +19,7 @@ const Home: React.FC = () => {
       id: buildingId,
       height,
       name: 'Здание',
-      address: 'Адрес',
+      // address: 'Адрес',
     });
     setBuildingHeight(height);
   }, []);
