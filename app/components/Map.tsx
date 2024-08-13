@@ -25,22 +25,50 @@ const Map: React.FC<MapProps> = ({ onBuildingSelect, selectedBuilding, buildingH
     });
 
     newMap.on('load', () => {
-      newMap.addLayer({
-        id: '3d-buildings',
-        source: 'composite',
-        'source-layer': 'building',
-        filter: ['==', 'extrude', 'true'],
-        type: 'fill-extrusion',
-        minzoom: 15,
-        paint: {
-          'fill-extrusion-color': '#aaa',
-          'fill-extrusion-height': ['get', 'height'],
-          'fill-extrusion-base': ['get', 'min_height'],
-          'fill-extrusion-opacity': 0.6,
-          
-        },
-      });
+      if (!newMap.getLayer('3d-buildings')) {
+        newMap.addLayer({
+          id: '3d-buildings',
+          source: 'composite',
+          'source-layer': 'building',
+          filter: ['==', 'extrude', 'true'],
+          type: 'fill-extrusion',
+          minzoom: 15,
+          paint: {
+            'fill-extrusion-color': [
+              'case',
+              ['==', ['id'], selectedBuilding],
+              '#ff0000', 
+              '#aaa' 
+            ],
+            'fill-extrusion-height': ['get', 'height'],
+            'fill-extrusion-base': ['get', 'min_height'],
+            'fill-extrusion-opacity': 0.6,
+          },
+        });
+      }
 
+      
+      if (!newMap.getLayer('building-outline')) {
+        newMap.addLayer({
+          id: 'building-outline',
+          source: 'composite',
+          'source-layer': 'building',
+          filter: ['==', 'extrude', 'true'],
+          type: 'line',
+          minzoom: 15,
+          paint: {
+            'line-color': [
+              'case',
+              ['==', ['id'], selectedBuilding],
+              '#000000', 
+              'transparent'  
+            ],
+            'line-width': 2  
+          },
+        });
+      }
+
+      
       newMap.on('click', '3d-buildings', (e) => {
         if (e.features && e.features.length > 0) {
           const feature = e.features[0];
@@ -52,6 +80,7 @@ const Map: React.FC<MapProps> = ({ onBuildingSelect, selectedBuilding, buildingH
       });
     });
 
+   
     mapRef.current = newMap;
 
     return () => {
@@ -61,20 +90,33 @@ const Map: React.FC<MapProps> = ({ onBuildingSelect, selectedBuilding, buildingH
     };
   }, [onBuildingSelect]);
 
- useEffect(() => {
-  if (mapRef.current && selectedBuilding && buildingHeight !== null) {
-    mapRef.current.setFeatureState(
-      { source: 'composite', sourceLayer: 'building', id: selectedBuilding },
-      { height: buildingHeight }
-    );
-    mapRef.current.setPaintProperty('3d-buildings', 'fill-extrusion-height', [
-      'case',
-      ['==', ['id'], selectedBuilding],
-      buildingHeight,
-      ['get', 'height'],
-    ]);
-  }
-}, [selectedBuilding, buildingHeight]);
+  useEffect(() => {
+    if (mapRef.current) {
+      if (selectedBuilding) {
+        mapRef.current.setPaintProperty('3d-buildings', 'fill-extrusion-color', [
+          'case',
+          ['==', ['id'], selectedBuilding],
+          '#ff0000', 
+          '#aaa'  
+        ]);
+        
+        if (buildingHeight !== null) {
+          mapRef.current.setFeatureState(
+            { source: 'composite', sourceLayer: 'building', id: selectedBuilding },
+            { height: buildingHeight }
+          );
+          mapRef.current.setPaintProperty('3d-buildings', 'fill-extrusion-height', [
+            'case',
+            ['==', ['id'], selectedBuilding],
+            buildingHeight,
+            ['get', 'height'],
+          ]);
+        }
+      } else {
+        return;
+      }
+    }
+  }, [selectedBuilding, buildingHeight]);
 
   return <div ref={mapContainerRef} className="w-full h-full"></div>;
 };

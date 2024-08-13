@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import React, { useState, useCallback } from 'react';
-import { BuildingInfo as BuildingInfoType } from './types'; // Типы данных для здания
+import { BuildingInfo as BuildingInfoType } from './types'; 
 import UserAvatar from './components/UserAvatar';
 
 const Map = dynamic(() => import('./components/Map'), { ssr: false });
