@@ -3,14 +3,17 @@ import React from 'react';
 interface BuildingInfoProps {
   buildingId: string;
   height: number | null;
+  name: string;
+  address: string;
 }
 
-const BuildingInfo: React.FC<BuildingInfoProps> = ({ buildingId, height }) => {
+const BuildingInfo: React.FC<BuildingInfoProps> = ({ buildingId, height, name, address }) => {
   return (
-    <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white shadow-lg rounded-lg p-4 z-10">
-      <h2 className="text-lg font-bold">Информация о здании</h2>
-      <p className="text-gray-600">ID здания: {buildingId}</p>
-      <p className="text-gray-600">Высота здания: {height !== null ? `${height} м` : 'Неизвестно'}</p>
+    <div className="absolute top-4 right-4 bg-white shadow-lg rounded-lg p-4 z-10">
+      <h2 className="text-xl font-bold">{name}</h2>
+      <p>ID: {buildingId}</p>
+      <p>Высота: {height} м</p>
+      <p>Адрес: {address}</p>
     </div>
   );
 };
