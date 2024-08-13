@@ -2,6 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-.mapboxgl-ctrl-logo {
-    display: none !important;
-  }
+.mapboxgl-ctrl-attrib {
+  display: none;
+}

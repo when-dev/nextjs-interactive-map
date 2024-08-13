@@ -41,7 +41,7 @@ const Home: React.FC = () => {
         onResetHeight={handleResetHeight}
       />
       <UserAvatar />
-      
+
     </div>
   );
 };
