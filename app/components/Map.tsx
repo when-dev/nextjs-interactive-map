@@ -26,7 +26,7 @@ const Map: React.FC<MapProps> = ({ onBuildingSelect, onIncreaseHeight, onResetHe
 
         const newMap = new mapboxgl.Map({
           container: mapContainerRef.current,
-          style: 'mapbox://styles/mapbox/streets-v12', 
+          style: 'mapbox://styles/mapbox/outdoors-v12', 
           center: [76.9454, 43.2566], // Алматы
           zoom: 15,
           pitch: 45,
