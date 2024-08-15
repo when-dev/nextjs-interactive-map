@@ -14,12 +14,12 @@ const Home: React.FC = () => {
   const [buildingHeight, setBuildingHeight] = useState<number | null>(null);
 
   // Обработка выбора здания на карте
-  const handleBuildingSelect = useCallback((buildingId: string, height: number) => {
+  const handleBuildingSelect = useCallback((buildingId: string, height: number, address: string) => {
     setSelectedBuilding({
       id: buildingId,
       height,
       name: 'Здание',
-      // address: 'Адрес',
+      address: address, 
     });
     setBuildingHeight(height);
   }, []);
@@ -55,7 +55,7 @@ const Home: React.FC = () => {
           buildingId={selectedBuilding.id}
           height={buildingHeight}
           name={selectedBuilding.name || 'Неизвестное здание'}
-          address={selectedBuilding.address || 'Неизвестный адрес'}
+          address={selectedBuilding.address || 'Неизвестный адрес'} // Здесь передаем адрес
         />
       )}
     </div>
