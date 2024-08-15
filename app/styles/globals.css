@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
-.mapboxgl-ctrl-attrib {
+@import '~mapbox-gl/dist/mapbox-gl.css';
+
+.mapboxgl-control-container {
   display: none;
 }

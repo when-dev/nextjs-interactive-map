@@ -40,7 +40,6 @@ const Home: React.FC = () => {
 
   return (
     <div className="relative w-full h-screen">
-      <UserAvatar />
       <Map
         onBuildingSelect={handleBuildingSelect}
         selectedBuilding={selectedBuilding?.id || null}
@@ -50,6 +49,7 @@ const Home: React.FC = () => {
         onIncreaseHeight={handleIncreaseHeight}
         onResetHeight={handleResetHeight}
       />
+      <UserAvatar />
       {selectedBuilding && (
         <BuildingInfo
           buildingId={selectedBuilding.id}
