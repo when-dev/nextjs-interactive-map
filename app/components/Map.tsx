@@ -21,7 +21,6 @@ const reverseGeocode = async (lng: number, lat: number): Promise<string> => {
     }
     const data = await response.json();
 
-    // Извлечение данных адреса
     const { house_number, road, city, country } = data.address || {};
     const fullAddress = `${house_number || ''} ${road || ''}, ${city || ''}, ${country || ''}`.trim();
 
@@ -32,11 +31,11 @@ const reverseGeocode = async (lng: number, lat: number): Promise<string> => {
   }
 };
 
-
 const Map: React.FC<MapProps> = ({ onBuildingSelect, selectedBuilding, buildingHeight }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
-  const [mapLoaded, setMapLoaded] = useState(false);
+  const [styleLoaded, setStyleLoaded] = useState(false);
+  const [selectedBuildings, setSelectedBuildings] = useState<Set<string>>(new Set());
 
   const handleMouseMove = useCallback((e: mapboxgl.MapMouseEvent) => {
     if (e.features && e.features.length > 0) {
@@ -67,21 +66,27 @@ const Map: React.FC<MapProps> = ({ onBuildingSelect, selectedBuilding, buildingH
       const feature = e.features[0];
       const buildingId = feature.id as string;
       const height = feature.properties?.height as number;
-  
-     
+
       if (feature.geometry.type === 'Polygon') {
         const coordinates = (feature.geometry as GeoJSON.Polygon).coordinates;
         const [lng, lat] = coordinates[0][0];
-  
-        // Обратное геокодирование для получения адреса
+
         const address = await reverseGeocode(lng, lat);
-  
         onBuildingSelect(buildingId, height, address);
+
+        setSelectedBuildings((prevSelected) => {
+          const newSelected = new Set(prevSelected);
+          if (newSelected.has(buildingId)) {
+            newSelected.delete(buildingId);
+          } else {
+            newSelected.add(buildingId);
+          }
+          return newSelected;
+        });
       }
     }
   }, [onBuildingSelect]);
 
-  
   useEffect(() => {
     if (!mapContainerRef.current) return;
 
@@ -92,9 +97,11 @@ const Map: React.FC<MapProps> = ({ onBuildingSelect, selectedBuilding, buildingH
       zoom: 15,
     });
 
-    newMap.on('load', () => {
-      setMapLoaded(true);
+    newMap.on('styledata', () => {
+      setStyleLoaded(true);
+    });
 
+    newMap.on('load', () => {
       if (!newMap.getLayer('3d-buildings')) {
         newMap.addLayer({
           id: '3d-buildings',
@@ -106,12 +113,12 @@ const Map: React.FC<MapProps> = ({ onBuildingSelect, selectedBuilding, buildingH
           paint: {
             'fill-extrusion-color': [
               'case',
-              ['==', ['id'], selectedBuilding],
-              '#ff0000', // Красный цвет для выбранного здания
+              ['in', ['id'], ['literal', Array.from(selectedBuildings)]],
+              '#ff0000',
               ['case',
                 ['boolean', ['feature-state', 'hover'], false],
-                '#ff9999', // Светло-красный цвет при наведении
-                '#aaa' // Цвет по умолчанию
+                '#ff9999',
+                '#aaa'
               ]
             ],
             'fill-extrusion-height': ['get', 'height'],
@@ -132,12 +139,12 @@ const Map: React.FC<MapProps> = ({ onBuildingSelect, selectedBuilding, buildingH
           paint: {
             'line-color': [
               'case',
-              ['==', ['id'], selectedBuilding],
-              '#000000', // Черный цвет для обводки выбранного здания
+              ['in', ['id'], ['literal', Array.from(selectedBuildings)]],
+              'transparent', 
               ['case',
                 ['boolean', ['feature-state', 'hover'], false],
-                'rgba(255, 0, 0, 0.5)', // Полупрозрачный красный цвет при наведении
-                'transparent' // Прозрачный цвет по умолчанию
+                'rgba(255, 0, 0, 0.5)',
+                'transparent'
               ]
             ],
             'line-width': 2
@@ -163,41 +170,42 @@ const Map: React.FC<MapProps> = ({ onBuildingSelect, selectedBuilding, buildingH
   }, [handleMouseMove, handleMouseLeave, handleClick]);
 
   useEffect(() => {
-    if (mapRef.current && mapLoaded) {
-      if (selectedBuilding) {
-        mapRef.current.setPaintProperty('3d-buildings', 'fill-extrusion-color', [
+    const map = mapRef.current;
+    if (map && styleLoaded) {
+      // Обновляем состояние выбранных зданий
+      map.querySourceFeatures('composite', { sourceLayer: 'building' }).forEach((feature) => {
+        const buildingId = feature.id as string;
+        map.setFeatureState(
+          { source: 'composite', sourceLayer: 'building', id: buildingId },
+          { selected: selectedBuildings.has(buildingId) }
+        );
+      });
+
+      if (map.getLayer('3d-buildings')) {
+        map.setPaintProperty('3d-buildings', 'fill-extrusion-color', [
           'case',
-          ['==', ['id'], selectedBuilding],
-          '#ff0000', // Красный цвет для выбранного здания
+          ['in', ['id'], ['literal', Array.from(selectedBuildings)]],
+          '#ff0000',
           ['case',
             ['boolean', ['feature-state', 'hover'], false],
-            '#ff9999', // Светло-красный цвет при наведении
-            '#aaa' // Цвет по умолчанию
+            '#ff9999',
+            '#aaa'
           ]
         ]);
 
-        if (buildingHeight !== null) {
-          mapRef.current.setFeatureState(
-            { source: 'composite', sourceLayer: 'building', id: selectedBuilding },
-            { height: buildingHeight }
-          );
-          mapRef.current.setPaintProperty('3d-buildings', 'fill-extrusion-height', [
-            'case',
-            ['==', ['id'], selectedBuilding],
-            buildingHeight,
-            ['get', 'height'],
-          ]);
-        }
-      } else {
-        mapRef.current.setPaintProperty('3d-buildings', 'fill-extrusion-color', [
+        map.setPaintProperty('3d-buildings', 'fill-extrusion-height', [
           'case',
-          ['boolean', ['feature-state', 'hover'], false],
-          '#ff9999', // Светло-красный цвет при наведении
-          '#aaa' // Цвет по умолчанию
+          ['in', ['id'], ['literal', Array.from(selectedBuildings)]],
+          ['case',
+            ['==', ['id'], selectedBuilding],
+            buildingHeight ?? ['get', 'height'],
+            ['get', 'height'],
+          ],
+          ['get', 'height']
         ]);
       }
     }
-  }, [selectedBuilding, buildingHeight, mapLoaded]);
+  }, [selectedBuilding, buildingHeight, styleLoaded, selectedBuildings]);
 
   return <div ref={mapContainerRef} className="w-full h-full"></div>;
 };
