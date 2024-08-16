@@ -71,8 +71,12 @@ const Map: React.FC<MapProps> = ({ onBuildingSelect, selectedBuilding, buildingH
         const coordinates = (feature.geometry as GeoJSON.Polygon).coordinates;
         const [lng, lat] = coordinates[0][0];
 
-        const address = await reverseGeocode(lng, lat);
-        onBuildingSelect(buildingId, height, address);
+        if (buildingId === selectedBuilding) {
+          onBuildingSelect('', 0, '');
+        } else {
+          const address = await reverseGeocode(lng, lat);
+          onBuildingSelect(buildingId, height, address);
+        }
 
         setSelectedBuildings((prevSelected) => {
           const newSelected = new Set(prevSelected);
@@ -140,7 +144,7 @@ const Map: React.FC<MapProps> = ({ onBuildingSelect, selectedBuilding, buildingH
             'line-color': [
               'case',
               ['in', ['id'], ['literal', Array.from(selectedBuildings)]],
-              'transparent', 
+              'transparent',
               ['case',
                 ['boolean', ['feature-state', 'hover'], false],
                 'rgba(255, 0, 0, 0.5)',

@@ -15,13 +15,26 @@ const Home: React.FC = () => {
 
   // Обработка выбора здания на карте
   const handleBuildingSelect = useCallback((buildingId: string, height: number, address: string) => {
-    setSelectedBuilding({
-      id: buildingId,
-      height,
-      name: 'Здание',
-      address: address, 
+    setSelectedBuilding((prevSelected) => {
+      if (prevSelected && prevSelected.id === buildingId) {
+        return null;
+      } else {
+        return {
+          id: buildingId,
+          height,
+          name: 'Здание',
+          address: address, 
+        }
+      }
+    })
+   
+    setBuildingHeight((prevHeight) => {
+      if (prevHeight === height) {
+        return null;
+      } else {
+        return height;
+      }
     });
-    setBuildingHeight(height);
   }, []);
 
   // Увеличение высоты здания
