@@ -22,7 +22,7 @@ const reverseGeocode = async (lng: number, lat: number): Promise<string> => {
     const data = await response.json();
 
     // Извлечение данных адреса
-    const { house_number, road, city, state, country } = data.address || {};
+    const { house_number, road, city, country } = data.address || {};
     const fullAddress = `${house_number || ''} ${road || ''}, ${city || ''}, ${country || ''}`.trim();
 
     return fullAddress !== ', , , , ' ? fullAddress : 'Unknown Address';
