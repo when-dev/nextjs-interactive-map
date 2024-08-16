@@ -23,7 +23,7 @@ const reverseGeocode = async (lng: number, lat: number): Promise<string> => {
 
     // Извлечение данных адреса
     const { house_number, road, city, state, country } = data.address || {};
-    const fullAddress = `${house_number || ''} ${road || ''}, ${city || ''}, ${state || ''}, ${country || ''}`.trim();
+    const fullAddress = `${house_number || ''} ${road || ''}, ${city || ''}, ${country || ''}`.trim();
 
     return fullAddress !== ', , , , ' ? fullAddress : 'Unknown Address';
   } catch (error) {
@@ -80,6 +80,8 @@ const Map: React.FC<MapProps> = ({ onBuildingSelect, selectedBuilding, buildingH
       }
     }
   }, [onBuildingSelect]);
+
+  
   useEffect(() => {
     if (!mapContainerRef.current) return;
 
