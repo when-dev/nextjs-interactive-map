@@ -179,17 +179,18 @@ const Map: React.FC<MapProps> = ({
           ],
         ]);
 
-        const heightCases: any[] = [];
-        selectedBuildings.forEach((building) => {
-          heightCases.push(['==', ['id'], building.id]);
-          heightCases.push(building.height);
-        });
-        heightCases.push(['get', 'height']); 
+        if (selectedBuildings.length === 0) {
+          map.setPaintProperty('3d-buildings', 'fill-extrusion-height', ['get', 'height']);
+        } else {
+          const heightCases: any[] = [];
+          selectedBuildings.forEach((building) => {
+            heightCases.push(['==', ['id'], building.id]);
+            heightCases.push(building.height);
+          });
+          heightCases.push(['get', 'height']);
 
-        map.setPaintProperty('3d-buildings', 'fill-extrusion-height', [
-          'case',
-          ...heightCases,
-        ]);
+          map.setPaintProperty('3d-buildings', 'fill-extrusion-height', ['case', ...heightCases]);
+        }
       }
     }
   }, [selectedBuildings, styleLoaded]);
