@@ -1,4 +1,4 @@
-'use client';
+"use client"
 
 import React, { useState, useCallback } from 'react';
 import dynamic from 'next/dynamic';
@@ -22,6 +22,7 @@ const Home: React.FC = () => {
           {
             id: buildingId,
             height,
+            originalHeight: height, 
             name: 'Здание',
             address,
           },
@@ -49,7 +50,7 @@ const Home: React.FC = () => {
   const handleResetHeight = useCallback((buildingId: string) => {
     setSelectedBuildings((prevBuildings) =>
       prevBuildings.map((building) =>
-        building.id === buildingId ? { ...building, height: building.height } : building
+        building.id === buildingId ? { ...building, height: building.originalHeight } : building
       )
     );
   }, []);
@@ -58,8 +59,7 @@ const Home: React.FC = () => {
     <div className="relative w-full h-screen">
       <Map
         onBuildingSelect={handleBuildingSelect}
-        selectedBuilding={null}
-        buildingHeight={null}
+        selectedBuildings={selectedBuildings}
         onClearBuildingSelection={handleRemoveBuilding}
         onClearAllSelections={handleRemoveAll}
       />

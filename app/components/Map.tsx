@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import mapboxgl from 'mapbox-gl';
 
 const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN as string;
@@ -6,8 +6,7 @@ mapboxgl.accessToken = mapboxToken;
 
 interface MapProps {
   onBuildingSelect: (buildingId: string, height: number, address: string) => void;
-  selectedBuilding: string | null;
-  buildingHeight: number | null;
+  selectedBuildings: { id: string, height: number }[];
   onClearBuildingSelection: (buildingId: string) => void;
   onClearAllSelections: () => void;
 }
@@ -22,10 +21,8 @@ const reverseGeocode = async (lng: number, lat: number): Promise<string> => {
       return 'Unknown Address';
     }
     const data = await response.json();
-
     const { house_number, road, city, country } = data.address || {};
     const fullAddress = `${house_number || ''} ${road || ''}, ${city || ''}, ${country || ''}`.trim();
-
     return fullAddress !== ', , , , ' ? fullAddress : 'Unknown Address';
   } catch (error) {
     console.error('Error in reverseGeocode:', error);
@@ -35,15 +32,13 @@ const reverseGeocode = async (lng: number, lat: number): Promise<string> => {
 
 const Map: React.FC<MapProps> = ({
   onBuildingSelect,
-  selectedBuilding,
-  buildingHeight,
+  selectedBuildings,
   onClearBuildingSelection,
   onClearAllSelections,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const [styleLoaded, setStyleLoaded] = useState(false);
-  const [selectedBuildings, setSelectedBuildings] = useState<Set<string>>(new Set());
 
   const handleMouseMove = useCallback((e: mapboxgl.MapMouseEvent) => {
     if (e.features && e.features.length > 0) {
@@ -58,7 +53,6 @@ const Map: React.FC<MapProps> = ({
   const handleMouseLeave = useCallback(() => {
     const map = mapRef.current;
     if (!map) return;
-
     const features = map.querySourceFeatures('composite', { sourceLayer: 'building' });
     features.forEach((feature) => {
       const buildingId = feature.id as string;
@@ -75,23 +69,11 @@ const Map: React.FC<MapProps> = ({
         const feature = e.features[0];
         const buildingId = feature.id as string;
         const height = feature.properties?.height as number;
-
         if (feature.geometry.type === 'Polygon') {
           const coordinates = (feature.geometry as GeoJSON.Polygon).coordinates;
           const [lng, lat] = coordinates[0][0];
           const address = await reverseGeocode(lng, lat);
-
           onBuildingSelect(buildingId, height, address);
-
-          setSelectedBuildings((prevSelected) => {
-            const newSelected = new Set(prevSelected);
-            if (newSelected.has(buildingId)) {
-              newSelected.delete(buildingId);
-            } else {
-              newSelected.add(buildingId);
-            }
-            return newSelected;
-          });
         }
       }
     },
@@ -100,7 +82,6 @@ const Map: React.FC<MapProps> = ({
 
   useEffect(() => {
     if (!mapContainerRef.current) return;
-
     const newMap = new mapboxgl.Map({
       container: mapContainerRef.current,
       style: 'mapbox://styles/mapbox/outdoors-v12',
@@ -124,7 +105,7 @@ const Map: React.FC<MapProps> = ({
           paint: {
             'fill-extrusion-color': [
               'case',
-              ['in', ['id'], ['literal', Array.from(selectedBuildings)]],
+              ['in', ['id'], ['literal', selectedBuildings.map((b) => b.id)]],
               '#ff0000',
               [
                 'case',
@@ -151,7 +132,7 @@ const Map: React.FC<MapProps> = ({
           paint: {
             'line-color': [
               'case',
-              ['in', ['id'], ['literal', Array.from(selectedBuildings)]],
+              ['in', ['id'], ['literal', selectedBuildings.map((b) => b.id)]],
               'transparent',
               [
                 'case',
@@ -185,19 +166,10 @@ const Map: React.FC<MapProps> = ({
   useEffect(() => {
     const map = mapRef.current;
     if (map && styleLoaded) {
-      // Обновляем состояние выбранных зданий
-      map.querySourceFeatures('composite', { sourceLayer: 'building' }).forEach((feature) => {
-        const buildingId = feature.id as string;
-        map.setFeatureState(
-          { source: 'composite', sourceLayer: 'building', id: buildingId },
-          { selected: selectedBuildings.has(buildingId) }
-        );
-      });
-
       if (map.getLayer('3d-buildings')) {
         map.setPaintProperty('3d-buildings', 'fill-extrusion-color', [
           'case',
-          ['in', ['id'], ['literal', Array.from(selectedBuildings)]],
+          ['in', ['id'], ['literal', selectedBuildings.map((b) => b.id)]],
           '#ff0000',
           [
             'case',
@@ -209,35 +181,18 @@ const Map: React.FC<MapProps> = ({
 
         map.setPaintProperty('3d-buildings', 'fill-extrusion-height', [
           'case',
-          ['in', ['id'], ['literal', Array.from(selectedBuildings)]],
+          ['in', ['id'], ['literal', selectedBuildings.map((b) => b.id)]],
           [
             'case',
-            ['==', ['id'], selectedBuilding],
-            buildingHeight ?? ['get', 'height'],
+            ['==', ['id'], selectedBuildings[0]?.id],
+            selectedBuildings[0]?.height ?? ['get', 'height'],
             ['get', 'height'],
           ],
           ['get', 'height'],
         ]);
       }
     }
-  }, [selectedBuilding, buildingHeight, styleLoaded, selectedBuildings]);
-
-  // Функция для сброса выделения одного здания
-  useEffect(() => {
-    const map = mapRef.current;
-    if (map && styleLoaded) {
-      selectedBuildings.forEach((buildingId) => {
-        map.setFeatureState(
-          { source: 'composite', sourceLayer: 'building', id: buildingId },
-          { selected: false }
-        );
-      });
-      // Сбрасываем выделение всех зданий после удаления
-      if (selectedBuildings.size === 0) {
-        onClearAllSelections();
-      }
-    }
-  }, [onClearBuildingSelection, selectedBuildings, styleLoaded, onClearAllSelections]);
+  }, [selectedBuildings, styleLoaded]);
 
   return <div ref={mapContainerRef} className="w-full h-full"></div>;
 };
