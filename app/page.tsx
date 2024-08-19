@@ -1,76 +1,76 @@
 'use client';
 
-import dynamic from 'next/dynamic';
 import React, { useState, useCallback } from 'react';
-import { BuildingInfo as BuildingInfoType } from './types'; // Типы данных для здания
+import dynamic from 'next/dynamic';
+import { BuildingInfo as BuildingInfoType } from './types';
 import UserAvatar from './components/UserAvatar';
 
 const Map = dynamic(() => import('./components/Map'), { ssr: false });
-const HeightControl = dynamic(() => import('./components/HeightControl'), { ssr: false });
-const BuildingInfo = dynamic(() => import('./components/BuildingInfo'), { ssr: false });
+const SelectedBuildingsInfo = dynamic(() => import('./components/SelectedBuildingsInfo'), { ssr: false });
 
 const Home: React.FC = () => {
-  const [selectedBuilding, setSelectedBuilding] = useState<BuildingInfoType | null>(null);
-  const [buildingHeight, setBuildingHeight] = useState<number | null>(null);
+  const [selectedBuildings, setSelectedBuildings] = useState<BuildingInfoType[]>([]);
 
-  // Обработка выбора здания на карте
   const handleBuildingSelect = useCallback((buildingId: string, height: number, address: string) => {
-    setSelectedBuilding((prevSelected) => {
-      if (prevSelected && prevSelected.id === buildingId) {
-        return null;
+    setSelectedBuildings((prevBuildings) => {
+      const alreadySelected = prevBuildings.some((building) => building.id === buildingId);
+      if (alreadySelected) {
+        return prevBuildings.filter((building) => building.id !== buildingId);
       } else {
-        return {
-          id: buildingId,
-          height,
-          name: 'Здание',
-          address: address, 
-        }
-      }
-    })
-   
-    setBuildingHeight((prevHeight) => {
-      if (prevHeight === height) {
-        return null;
-      } else {
-        return height;
+        return [
+          ...prevBuildings,
+          {
+            id: buildingId,
+            height,
+            name: 'Здание',
+            address,
+          },
+        ];
       }
     });
   }, []);
 
-  // Увеличение высоты здания
-  const handleIncreaseHeight = useCallback(() => {
-    if (buildingHeight !== null && selectedBuilding) {
-      setBuildingHeight(buildingHeight + 10);
-    }
-  }, [buildingHeight, selectedBuilding]);
+  const handleRemoveBuilding = useCallback((buildingId: string) => {
+    setSelectedBuildings((prevBuildings) => prevBuildings.filter((building) => building.id !== buildingId));
+  }, []);
 
-  // Сброс высоты здания
-  const handleResetHeight = useCallback(() => {
-    if (selectedBuilding) {
-      setBuildingHeight(selectedBuilding.height);
-    }
-  }, [selectedBuilding]);
+  const handleRemoveAll = useCallback(() => {
+    setSelectedBuildings([]);
+  }, []);
+
+  const handleIncreaseHeight = useCallback((buildingId: string) => {
+    setSelectedBuildings((prevBuildings) =>
+      prevBuildings.map((building) =>
+        building.id === buildingId ? { ...building, height: building.height + 10 } : building
+      )
+    );
+  }, []);
+
+  const handleResetHeight = useCallback((buildingId: string) => {
+    setSelectedBuildings((prevBuildings) =>
+      prevBuildings.map((building) =>
+        building.id === buildingId ? { ...building, height: building.height } : building
+      )
+    );
+  }, []);
 
   return (
     <div className="relative w-full h-screen">
       <Map
         onBuildingSelect={handleBuildingSelect}
-        selectedBuilding={selectedBuilding?.id || null}
-        buildingHeight={buildingHeight}
+        selectedBuilding={null}
+        buildingHeight={null}
+        onClearBuildingSelection={handleRemoveBuilding}
+        onClearAllSelections={handleRemoveAll}
       />
-      <HeightControl
+      <UserAvatar />
+      <SelectedBuildingsInfo
+        selectedBuildings={selectedBuildings}
+        onRemoveBuilding={handleRemoveBuilding}
+        onRemoveAll={handleRemoveAll}
         onIncreaseHeight={handleIncreaseHeight}
         onResetHeight={handleResetHeight}
       />
-      <UserAvatar />
-      {selectedBuilding && (
-        <BuildingInfo
-          buildingId={selectedBuilding.id}
-          height={buildingHeight}
-          name={selectedBuilding.name || 'Неизвестное здание'}
-          address={selectedBuilding.address || 'Неизвестный адрес'} // Здесь передаем адрес
-        />
-      )}
     </div>
   );
 };

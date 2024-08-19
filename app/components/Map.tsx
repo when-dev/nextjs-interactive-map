@@ -8,6 +8,8 @@ interface MapProps {
   onBuildingSelect: (buildingId: string, height: number, address: string) => void;
   selectedBuilding: string | null;
   buildingHeight: number | null;
+  onClearBuildingSelection: (buildingId: string) => void;
+  onClearAllSelections: () => void;
 }
 
 const reverseGeocode = async (lng: number, lat: number): Promise<string> => {
@@ -31,7 +33,13 @@ const reverseGeocode = async (lng: number, lat: number): Promise<string> => {
   }
 };
 
-const Map: React.FC<MapProps> = ({ onBuildingSelect, selectedBuilding, buildingHeight }) => {
+const Map: React.FC<MapProps> = ({
+  onBuildingSelect,
+  selectedBuilding,
+  buildingHeight,
+  onClearBuildingSelection,
+  onClearAllSelections,
+}) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const [styleLoaded, setStyleLoaded] = useState(false);
@@ -61,35 +69,34 @@ const Map: React.FC<MapProps> = ({ onBuildingSelect, selectedBuilding, buildingH
     });
   }, []);
 
-  const handleClick = useCallback(async (e: mapboxgl.MapMouseEvent) => {
-    if (e.features && e.features.length > 0) {
-      const feature = e.features[0];
-      const buildingId = feature.id as string;
-      const height = feature.properties?.height as number;
+  const handleClick = useCallback(
+    async (e: mapboxgl.MapMouseEvent) => {
+      if (e.features && e.features.length > 0) {
+        const feature = e.features[0];
+        const buildingId = feature.id as string;
+        const height = feature.properties?.height as number;
 
-      if (feature.geometry.type === 'Polygon') {
-        const coordinates = (feature.geometry as GeoJSON.Polygon).coordinates;
-        const [lng, lat] = coordinates[0][0];
-
-        if (buildingId === selectedBuilding) {
-          onBuildingSelect('', 0, '');
-        } else {
+        if (feature.geometry.type === 'Polygon') {
+          const coordinates = (feature.geometry as GeoJSON.Polygon).coordinates;
+          const [lng, lat] = coordinates[0][0];
           const address = await reverseGeocode(lng, lat);
-          onBuildingSelect(buildingId, height, address);
-        }
 
-        setSelectedBuildings((prevSelected) => {
-          const newSelected = new Set(prevSelected);
-          if (newSelected.has(buildingId)) {
-            newSelected.delete(buildingId);
-          } else {
-            newSelected.add(buildingId);
-          }
-          return newSelected;
-        });
+          onBuildingSelect(buildingId, height, address);
+
+          setSelectedBuildings((prevSelected) => {
+            const newSelected = new Set(prevSelected);
+            if (newSelected.has(buildingId)) {
+              newSelected.delete(buildingId);
+            } else {
+              newSelected.add(buildingId);
+            }
+            return newSelected;
+          });
+        }
       }
-    }
-  }, [onBuildingSelect]);
+    },
+    [onBuildingSelect]
+  );
 
   useEffect(() => {
     if (!mapContainerRef.current) return;
@@ -119,11 +126,12 @@ const Map: React.FC<MapProps> = ({ onBuildingSelect, selectedBuilding, buildingH
               'case',
               ['in', ['id'], ['literal', Array.from(selectedBuildings)]],
               '#ff0000',
-              ['case',
+              [
+                'case',
                 ['boolean', ['feature-state', 'hover'], false],
                 '#ff9999',
-                '#aaa'
-              ]
+                '#aaa',
+              ],
             ],
             'fill-extrusion-height': ['get', 'height'],
             'fill-extrusion-base': ['get', 'min_height'],
@@ -145,13 +153,14 @@ const Map: React.FC<MapProps> = ({ onBuildingSelect, selectedBuilding, buildingH
               'case',
               ['in', ['id'], ['literal', Array.from(selectedBuildings)]],
               'transparent',
-              ['case',
+              [
+                'case',
                 ['boolean', ['feature-state', 'hover'], false],
                 'rgba(255, 0, 0, 0.5)',
-                'transparent'
-              ]
+                'transparent',
+              ],
             ],
-            'line-width': 2
+            'line-width': 2,
           },
         });
       }
@@ -190,26 +199,45 @@ const Map: React.FC<MapProps> = ({ onBuildingSelect, selectedBuilding, buildingH
           'case',
           ['in', ['id'], ['literal', Array.from(selectedBuildings)]],
           '#ff0000',
-          ['case',
+          [
+            'case',
             ['boolean', ['feature-state', 'hover'], false],
             '#ff9999',
-            '#aaa'
-          ]
+            '#aaa',
+          ],
         ]);
 
         map.setPaintProperty('3d-buildings', 'fill-extrusion-height', [
           'case',
           ['in', ['id'], ['literal', Array.from(selectedBuildings)]],
-          ['case',
+          [
+            'case',
             ['==', ['id'], selectedBuilding],
             buildingHeight ?? ['get', 'height'],
             ['get', 'height'],
           ],
-          ['get', 'height']
+          ['get', 'height'],
         ]);
       }
     }
   }, [selectedBuilding, buildingHeight, styleLoaded, selectedBuildings]);
+
+  // Функция для сброса выделения одного здания
+  useEffect(() => {
+    const map = mapRef.current;
+    if (map && styleLoaded) {
+      selectedBuildings.forEach((buildingId) => {
+        map.setFeatureState(
+          { source: 'composite', sourceLayer: 'building', id: buildingId },
+          { selected: false }
+        );
+      });
+      // Сбрасываем выделение всех зданий после удаления
+      if (selectedBuildings.size === 0) {
+        onClearAllSelections();
+      }
+    }
+  }, [onClearBuildingSelection, selectedBuildings, styleLoaded, onClearAllSelections]);
 
   return <div ref={mapContainerRef} className="w-full h-full"></div>;
 };
