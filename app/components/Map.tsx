@@ -40,32 +40,9 @@ const Map: React.FC<MapProps> = ({
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const [styleLoaded, setStyleLoaded] = useState(false);
 
-  const handleMouseMove = useCallback((e: mapboxgl.MapMouseEvent) => {
-    if (e.features && e.features.length > 0) {
-      const hoveredBuildingId = e.features[0].id as string | undefined;
-      if (hoveredBuildingId) {
-        mapRef.current?.setFeatureState(
-          { source: 'composite', sourceLayer: 'building', id: hoveredBuildingId },
-          { hover: true }
-        );
-      }
-    }
-  }, []);
-
-  const handleMouseLeave = useCallback(() => {
-    const map = mapRef.current;
-    if (!map) return;
-    const features = map.querySourceFeatures('composite', { sourceLayer: 'building' });
-    features.forEach((feature) => {
-      const buildingId = feature.id as string | undefined;
-      if (buildingId) {
-        map.setFeatureState(
-          { source: 'composite', sourceLayer: 'building', id: buildingId },
-          { hover: false }
-        );
-      }
-    });
-  }, []);
+  // Обработчики событий больше не нужны
+  const handleMouseMove = useCallback((e: mapboxgl.MapMouseEvent) => {}, []);
+  const handleMouseLeave = useCallback(() => {}, []);
 
   const handleClick = useCallback(
     async (e: mapboxgl.MapMouseEvent) => {
@@ -115,13 +92,8 @@ const Map: React.FC<MapProps> = ({
             'fill-extrusion-color': [
               'case',
               ['in', ['id'], ['literal', selectedBuildings.map((b) => b.id)]],
-              '#ff0000',
-              [
-                'case',
-                ['boolean', ['feature-state', 'hover'], false],
-                '#ff9999',
-                '#aaa',
-              ],
+              '#ff0000', // Цвет выделенных зданий
+              '#aaa', // Цвет всех остальных зданий
             ],
             'fill-extrusion-height': ['get', 'height'],
             'fill-extrusion-base': ['get', 'min_height'],
@@ -133,33 +105,7 @@ const Map: React.FC<MapProps> = ({
         });
       }
 
-      if (!newMap.getLayer('building-outline')) {
-        newMap.addLayer({
-          id: 'building-outline',
-          source: 'composite',
-          'source-layer': 'building',
-          filter: ['==', 'extrude', 'true'],
-          type: 'line',
-          minzoom: 15,
-          paint: {
-            'line-color': [
-              'case',
-              ['in', ['id'], ['literal', selectedBuildings.map((b) => b.id)]],
-              'transparent',
-              [
-                'case',
-                ['boolean', ['feature-state', 'hover'], false],
-                'rgba(255, 0, 0, 0.5)',
-                'transparent',
-              ],
-            ],
-            'line-width': 2,
-          },
-        });
-      }
-
-      newMap.on('mousemove', '3d-buildings', handleMouseMove);
-      newMap.on('mouseleave', '3d-buildings', handleMouseLeave);
+      // Удаляем ненужные обработчики
       newMap.on('click', '3d-buildings', handleClick);
     });
 
@@ -167,13 +113,11 @@ const Map: React.FC<MapProps> = ({
 
     return () => {
       if (mapRef.current) {
-        mapRef.current.off('mousemove', '3d-buildings', handleMouseMove);
-        mapRef.current.off('mouseleave', '3d-buildings', handleMouseLeave);
         mapRef.current.off('click', '3d-buildings', handleClick);
         mapRef.current.remove();
       }
     };
-  }, [handleMouseMove, handleMouseLeave, handleClick]);
+  }, [handleClick]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -183,12 +127,7 @@ const Map: React.FC<MapProps> = ({
           'case',
           ['in', ['id'], ['literal', selectedBuildings.map((b) => b.id)]],
           '#ff0000',
-          [
-            'case',
-            ['boolean', ['feature-state', 'hover'], false],
-            '#ff9999',
-            '#aaa',
-          ],
+          '#aaa',
         ]);
 
         if (selectedBuildings.length === 0) {
