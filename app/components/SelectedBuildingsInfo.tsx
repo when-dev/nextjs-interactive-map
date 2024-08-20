@@ -17,7 +17,7 @@ const SelectedBuildingsInfo: React.FC<SelectedBuildingsInfoProps> = ({
   onRemoveAll,
 }) => {
   const panelRef = useRef<HTMLDivElement>(null);
-  const [panelHeight, setPanelHeight] = useState(20); // in vh, starting at 50vh
+  const [panelHeight, setPanelHeight] = useState(2); 
   const [dragging, setDragging] = useState(false);
   const startY = useRef(0);
   const startHeight = useRef(panelHeight);
@@ -32,7 +32,7 @@ const SelectedBuildingsInfo: React.FC<SelectedBuildingsInfoProps> = ({
     if (!dragging) return;
 
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-    const newHeight = Math.max(20, Math.min(60, startHeight.current + ((startY.current - clientY) * 100) / window.innerHeight));
+    const newHeight = Math.max(5, Math.min(80, startHeight.current + ((startY.current - clientY) * 100) / window.innerHeight));
 
     setPanelHeight(newHeight);
   };
@@ -61,6 +61,15 @@ const SelectedBuildingsInfo: React.FC<SelectedBuildingsInfoProps> = ({
       document.removeEventListener('touchend', handleMouseUp);
     };
   }, [dragging]);
+
+
+  useEffect(() => {
+    if (selectedBuildings.length === 0) {
+      setPanelHeight(2); 
+    } else {
+      setPanelHeight(45);
+    }
+  }, [selectedBuildings]);
 
   return (
     <div
