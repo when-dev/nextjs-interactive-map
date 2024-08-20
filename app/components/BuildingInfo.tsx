@@ -9,7 +9,7 @@ interface BuildingInfoProps {
 
 const BuildingInfo: React.FC<BuildingInfoProps> = ({ buildingId, height, name, address }) => {
   return (
-    <div className="absolute top-4 right-4 bg-white shadow-lg rounded-lg p-4 z-10">
+    <div className="absolute top-4 right-4 bg-white shadow-lg rounded-lg p-4 z-10 md:max-w-xs w-full md:w-auto">
       <h2 className="text-xl font-bold">{name}</h2>
       <p>ID: {buildingId}</p>
       <p>Высота: {height} м</p>

@@ -17,7 +17,7 @@ const SelectedBuildingsInfo: React.FC<SelectedBuildingsInfoProps> = ({
   onRemoveAll,
 }) => {
   return (
-    <div className="absolute top-4 right-4 bg-white shadow-lg rounded-lg p-4 z-10 max-h-[80vh] overflow-y-auto">
+    <div className="fixed bottom-0 left-0 right-0 bg-white shadow-lg rounded-t-lg p-4 z-10 max-h-[50vh] overflow-y-auto md:max-w-xs md:rounded-lg md:bottom-auto md:right-4 md:top-4">
       {selectedBuildings.length > 2 && (
         <button
           className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded mb-4 w-full"
