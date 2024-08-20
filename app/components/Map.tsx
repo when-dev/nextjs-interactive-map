@@ -40,10 +40,6 @@ const Map: React.FC<MapProps> = ({
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const [styleLoaded, setStyleLoaded] = useState(false);
 
-  // Обработчики событий больше не нужны
-  const handleMouseMove = useCallback((e: mapboxgl.MapMouseEvent) => {}, []);
-  const handleMouseLeave = useCallback(() => {}, []);
-
   const handleClick = useCallback(
     async (e: mapboxgl.MapMouseEvent) => {
       if (e.features && e.features.length > 0) {
@@ -105,7 +101,6 @@ const Map: React.FC<MapProps> = ({
         });
       }
 
-      // Удаляем ненужные обработчики
       newMap.on('click', '3d-buildings', handleClick);
     });
 
