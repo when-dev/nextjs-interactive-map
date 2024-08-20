@@ -91,7 +91,12 @@ const Map: React.FC<MapProps> = ({
       style: 'mapbox://styles/mapbox/outdoors-v12',
       center: [76.9454, 43.2566], // Алматы
       zoom: 15,
+      pitch: 60,
+      bearing: -17.6,
     });
+
+    newMap.touchZoomRotate.enable();
+    newMap.dragRotate.enable();
 
     newMap.on('styledata', () => {
       setStyleLoaded(true);
