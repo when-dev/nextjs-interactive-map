@@ -42,11 +42,13 @@ const Map: React.FC<MapProps> = ({
 
   const handleMouseMove = useCallback((e: mapboxgl.MapMouseEvent) => {
     if (e.features && e.features.length > 0) {
-      const hoveredBuildingId = e.features[0].id as string;
-      mapRef.current?.setFeatureState(
-        { source: 'composite', sourceLayer: 'building', id: hoveredBuildingId },
-        { hover: true }
-      );
+      const hoveredBuildingId = e.features[0].id as string | undefined;
+      if (hoveredBuildingId) {
+        mapRef.current?.setFeatureState(
+          { source: 'composite', sourceLayer: 'building', id: hoveredBuildingId },
+          { hover: true }
+        );
+      }
     }
   }, []);
 
@@ -55,11 +57,13 @@ const Map: React.FC<MapProps> = ({
     if (!map) return;
     const features = map.querySourceFeatures('composite', { sourceLayer: 'building' });
     features.forEach((feature) => {
-      const buildingId = feature.id as string;
-      map.setFeatureState(
-        { source: 'composite', sourceLayer: 'building', id: buildingId },
-        { hover: false }
-      );
+      const buildingId = feature.id as string | undefined;
+      if (buildingId) {
+        map.setFeatureState(
+          { source: 'composite', sourceLayer: 'building', id: buildingId },
+          { hover: false }
+        );
+      }
     });
   }, []);
 
@@ -67,9 +71,9 @@ const Map: React.FC<MapProps> = ({
     async (e: mapboxgl.MapMouseEvent) => {
       if (e.features && e.features.length > 0) {
         const feature = e.features[0];
-        const buildingId = feature.id as string;
+        const buildingId = feature.id as string | undefined;
         const height = feature.properties?.height as number;
-        if (feature.geometry.type === 'Polygon') {
+        if (buildingId && feature.geometry.type === 'Polygon') {
           const coordinates = (feature.geometry as GeoJSON.Polygon).coordinates;
           const [lng, lat] = coordinates[0][0];
           const address = await reverseGeocode(lng, lat);
@@ -117,6 +121,9 @@ const Map: React.FC<MapProps> = ({
             'fill-extrusion-height': ['get', 'height'],
             'fill-extrusion-base': ['get', 'min_height'],
             'fill-extrusion-opacity': 0.6,
+          },
+          layout: {
+            'visibility': 'visible',
           },
         });
       }
