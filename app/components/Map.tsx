@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import type React from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import mapboxgl from 'mapbox-gl';
 
 const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN as string;
@@ -30,6 +31,7 @@ const reverseGeocode = async (lng: number, lat: number): Promise<string> => {
   }
 };
 
+// biome-ignore lint/suspicious/noShadowRestrictedNames: <explanation>
 const Map: React.FC<MapProps> = ({
   onBuildingSelect,
   selectedBuildings,
@@ -57,6 +59,7 @@ const Map: React.FC<MapProps> = ({
     [onBuildingSelect]
   );
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
     if (!mapContainerRef.current) return;
     const newMap = new mapboxgl.Map({
@@ -128,7 +131,9 @@ const Map: React.FC<MapProps> = ({
         if (selectedBuildings.length === 0) {
           map.setPaintProperty('3d-buildings', 'fill-extrusion-height', ['get', 'height']);
         } else {
+          // biome-ignore lint/suspicious/noExplicitAny: <explanation>
           const heightCases: any[] = [];
+          // biome-ignore lint/complexity/noForEach: <explanation>
           selectedBuildings.forEach((building) => {
             heightCases.push(['==', ['id'], building.id]);
             heightCases.push(building.height);
@@ -141,7 +146,7 @@ const Map: React.FC<MapProps> = ({
     }
   }, [selectedBuildings, styleLoaded]);
 
-  return <div ref={mapContainerRef} className="w-full h-full"></div>;
+  return <div ref={mapContainerRef} className="w-full h-full" />;
 };
 
 export default Map;

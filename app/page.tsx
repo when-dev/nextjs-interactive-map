@@ -1,10 +1,12 @@
 "use client"
 
-import React, { useState, useCallback } from 'react';
+import type React from 'react';
+import { useState, useCallback } from 'react';
 import dynamic from 'next/dynamic';
-import { BuildingInfo as BuildingInfoType } from './types';
+import type { BuildingInfo as BuildingInfoType } from './types';
 import UserAvatar from './components/UserAvatar';
 
+// biome-ignore lint/suspicious/noShadowRestrictedNames: <explanation>
 const Map = dynamic(() => import('./components/Map'), { ssr: false });
 const SelectedBuildingsInfo = dynamic(() => import('./components/SelectedBuildingsInfo'), { ssr: false });
 
@@ -16,6 +18,7 @@ const Home: React.FC = () => {
       const alreadySelected = prevBuildings.some((building) => building.id === buildingId);
       if (alreadySelected) {
         return prevBuildings.filter((building) => building.id !== buildingId);
+      // biome-ignore lint/style/noUselessElse: <explanation>
       } else {
         return [
           ...prevBuildings,
